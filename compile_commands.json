@@ -1,0 +1,22 @@
+[
+  {
+    "arguments": [
+      "/usr/lib/ccache/g++",
+      "-c",
+      "-fPIC",
+      "-Wall",
+      "-g",
+      "-O3",
+      "-funroll-loops",
+      "-I./include",
+      "-Wl,-rpath",
+      "./",
+      "-o",
+      "transmitDataTest",
+      "transmitDataTest.cpp"
+    ],
+    "directory": "/home/james/Documents/MotionCaptureTransmitter",
+    "file": "/home/james/Documents/MotionCaptureTransmitter/transmitDataTest.cpp",
+    "output": "/home/james/Documents/MotionCaptureTransmitter/transmitDataTest"
+  }
+]

@@ -13,7 +13,7 @@
 
 using namespace std;
 
-int32_t ConvertPosition(float position[3]);
+int transmitPosition(float x, float y, float z);
 
 int main(int argc, const char **argv)
 {
@@ -55,19 +55,13 @@ int main(int argc, const char **argv)
   return 0;
 }
 
-int32_t ConvertPosition(float position[3]) {
-	/* Converts position from local coordinates to LLH
-	* Inputs
-	*  position   - float -  Array of x, y, z position in local coordinate frame
-	* Output
-	* 	position_llh  - int32_t -  Array of lat., lon., altitude
-	*/
-
-	int32_t originLocation_lat = 0; // degE7
- 	int32_t originLocation_lon = 0;  // degE7
-	int32_t originLocation_alt = 0;  // mm
-	
-
+int transmitPosition(float x, float y, float z) {
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+	uint8_t sysID = 50;
+	uint8_t compID = 0;
+	mavlink_msg_local_position_ned_pack(sysID, compID, &msg, 0, x, y, z, 0, 0, 0);
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 	return 0;
-
 }
+
