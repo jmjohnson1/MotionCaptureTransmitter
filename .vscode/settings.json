@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/james/Documents/MotionCaptureTransmitter",
+            "binaryPath": "/home/james/Documents/MotionCaptureTransmitter/transmitDataTest",
+            "binaryArgs": []
+        }
+    ]
+}
