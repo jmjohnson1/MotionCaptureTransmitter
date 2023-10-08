@@ -5,5 +5,9 @@
             "binaryPath": "/home/james/Documents/MotionCaptureTransmitter/transmitDataTest",
             "binaryArgs": []
         }
-    ]
+    ],
+    "files.associations": {
+        "*.tcc": "cpp",
+        "fstream": "cpp"
+    }
 }

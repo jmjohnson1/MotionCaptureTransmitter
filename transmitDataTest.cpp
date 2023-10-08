@@ -5,6 +5,8 @@
 * 	ip is the ip address of the Phasespace server.
 */
 
+// TODO: add quit handler
+
 #include <iostream>
 #include <stdio.h>
 #include <cstdlib>
@@ -17,6 +19,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <cstring>
+#include <fstream>
+#include <chrono>
 
 #include <mavlink/common/mavlink.h>
 #include "owl.hpp"
@@ -25,20 +29,40 @@
 using std::string;
 using namespace std;
 
-int transmitPosition(float x, float y, float z);
-
-int top(int argc, char **argv);
+int transmitPosition(Serial_Port *port, float x, float y, float z);
+int recordToLogfile(OWL::Markers *markers, const OWL::Event *event, ofstream *logfile);
 
 int main(int argc, const char **argv)
 {
   string address = argc > 1 ? argv[1] : "localhost";
   OWL::Context owl;
   OWL::Markers markers;
+  ofstream logfile;
+  const char *uartName = "/dev/ttyUSB0";
+  int baudrate = 57600;
+  chrono::time_point<chrono::system_clock> previousTime, currentTime;
 
   if(owl.open(address) <= 0 || owl.initialize() <= 0) return 0;
 
   // start streaming
   owl.streaming(1);
+
+
+  // Initialize serial
+  Serial_Port port(uartName, baudrate);
+  port.start();
+  if (!port.is_running()) {
+    printf("\n");
+    printf("ERROR INITIALIZING SERIAL");
+    printf("\n");
+    return 1;
+  }
+
+  // Open logfile
+  logfile.open("owlOutput.txt");
+
+  // Start recording time for message streaming rate
+  previousTime = chrono::system_clock::now(); 
 
   // main loop
   while(owl.isOpen() && owl.property<int>("initialized"))
@@ -52,30 +76,45 @@ int main(int argc, const char **argv)
         }
       else if(event->type_id() == OWL::Type::FRAME)
         {
-          cout << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
-          if(event->find("markers", markers) > 0)
-            {
-              cout << " markers=" << markers.size() << ":" << endl;
-              for(OWL::Markers::iterator m = markers.begin(); m != markers.end(); m++)
-                if(m->cond > 0)
-                  cout << "  " << m->id << ") " << m->x << "," << m->y << "," << m->z << endl;
-            }
+          recordToLogfile(&markers, event, &logfile);
+          // Check if it's time to send a position update
+          currentTime = chrono::system_clock::now();
+          auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
+          if (elapsedMilliseconds.count() >= 1000) {
+            previousTime = currentTime;
+            event->find("markers", markers);
+            // TODO: Come up with a smarter way to deal with the markers
+            transmitPosition(&port, markers[0].x, markers[0].y, markers[0].z);
+          }
+
         }
     } // while
 
   owl.done();
   owl.close();
+  logfile.close();
 
   return 0;
 }
 
-int transmitPosition(float x, float y, float z) {
+
+
+int transmitPosition(Serial_Port *port, float x, float y, float z) {
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint8_t sysID = 50;
 	uint8_t compID = 0;
 	mavlink_msg_local_position_ned_pack(sysID, compID, &msg, 0, x, y, z, 0, 0, 0);
-	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  port->write_message(msg);
 	return 0;
 }
 
+int recordToLogfile(OWL::Markers *markers, const OWL::Event *event, ofstream *logfile) {
+  *logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
+  if(event->find("markers", markers) > 0) {
+      *logfile << " markers=" << markers->size() << ":" << endl;
+      for(OWL::Markers::iterator m = markers->begin(); m != markers->end(); m++)
+        if(m->cond > 0)
+          *logfile << "  " << m->id << ") " << m->x << "," << m->y << "," << m->z << endl;
+    }
+}
