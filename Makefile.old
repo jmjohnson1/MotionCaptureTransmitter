@@ -16,7 +16,7 @@ OBJECTS = transmitDataTest.o serial_port.o
 all: $(BINARY)
 
 $(BINARY): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -o $@ $^
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
