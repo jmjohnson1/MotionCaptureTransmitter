@@ -41,15 +41,31 @@ int transmitPosition(Serial_Port *port, float x, float y, float z) {
 	return 0;
 }
 
-int recordToLogfile(OWL::Markers *markers, const OWL::Event *event) {
+//int recordToLogfile(OWL::Markers *markers, const OWL::Event *event) {
+//  ofstream logfile;
+//  logfile.open("output.csv");
+//  logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
+//  if(event->find("markers", *markers) > 0) {
+//    logfile << " markers=" << markers->size() << ":" << endl;
+//    for(OWL::Markers::iterator m = markers->begin(); m != markers->end(); m++) {
+//      if(m->cond > 0) {
+//        logfile << "  " << m->id << ") " << m->x << "," << m->y << "," << m->z << endl;
+//      }
+//    }
+//  }
+//}
+
+int recordToLogfile(OWL::Rigids *rigids, const OWL::Event *event) {
   ofstream logfile;
   logfile.open("output.csv");
   logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
-  if(event->find("markers", *markers) > 0) {
-    logfile << " markers=" << markers->size() << ":" << endl;
-    for(OWL::Markers::iterator m = markers->begin(); m != markers->end(); m++) {
+  if(event->find("rigids", *rigids) > 0) {
+    logfile << " rigids=" << rigids->size() << ":" << endl;
+    for(OWL::Rigids::iterator r = rigids->begin(); r != rigids->end(); r++) {
       if(m->cond > 0) {
-        logfile << "  " << m->id << ") " << m->x << "," << m->y << "," << m->z << endl;
+				logfile << "  " << r->id << ") " << r->pose[0] << "," << r->pose[1] << "," << r->pose[2]
+						 << "," << r->pose[3] << "," << r->pose[4] << "," << r->pose[5] << "," << r->pose[6]
+						 << endl;
       }
     }
   }
@@ -60,6 +76,7 @@ int main(int argc, const char **argv)
   string address = argc > 1 ? argv[1] : "localhost";
   OWL::Context owl;
   OWL::Markers markers;
+	OWL::Rigids rigids;
 
   // Serial port setup
   const char *uartName = "/dev/ttyUSB0";
@@ -69,6 +86,21 @@ int main(int argc, const char **argv)
   chrono::time_point<chrono::system_clock> previousTime, currentTime;
 
   if(owl.open(address) <= 0 || owl.initialize() <= 0) return 0;
+	
+
+	// Define a rigid body tracker
+	uint32_t trackerID = 1;
+	owl.createTracker(trackerID, "rigid", "quadcopter");
+
+	// Assign markers to rigid body (location in mm)
+	owl.assignMarker(trackerID, 0, "0", "pos = 0,0");
+	owl.assignMarker(trackerID, 1, "1", "pos = 0,0");
+	owl.assignMarker(trackerID, 2, "2", "pos = 0,0");
+	owl.assignMarker(trackerID, 3, "3", "pos = 0,0");
+	owl.assignMarker(trackerID, 4, "4", "pos = 0,0");
+	owl.assignMarker(trackerID, 5, "5", "pos = 0,0");
+	owl.assignMarker(trackerID, 6, "6", "pos = 0,0");
+	owl.assignMarker(trackerID, 7, "7", "pos = 0,0");
 
   // start streaming
   owl.streaming(1);
@@ -98,15 +130,15 @@ int main(int argc, const char **argv)
         }
       else if(event->type_id() == OWL::Type::FRAME)
         {
-          recordToLogfile(&markers, event);
+          recordToLogfile(&rigids, event);
           // Check if it's time to send a position update
           currentTime = chrono::system_clock::now();
           auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
           if (elapsedMilliseconds.count() >= 1000) {
             previousTime = currentTime;
-            event->find("markers", markers);
+            event->find("rigids", rigids);
             // TODO: Come up with a smarter way to deal with the markers
-            transmitPosition(&port, markers[0].x, markers[0].y, markers[0].z);
+            transmitPosition(&port, rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2]);
           }
 
         }
