@@ -55,14 +55,14 @@ int transmitPosition(Serial_Port *port, float x, float y, float z) {
 //  }
 //}
 
-int recordToLogfile(OWL::Rigids *rigids, const OWL::Event *event) {
+int recordToLogfile(const OWL::Rigids *rigids, const OWL::Event *event) {
   ofstream logfile;
   logfile.open("output.csv");
   logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
   if(event->find("rigids", *rigids) > 0) {
     logfile << " rigids=" << rigids->size() << ":" << endl;
     for(OWL::Rigids::iterator r = rigids->begin(); r != rigids->end(); r++) {
-      if(m->cond > 0) {
+      if(r->cond > 0) {
 				logfile << "  " << r->id << ") " << r->pose[0] << "," << r->pose[1] << "," << r->pose[2]
 						 << "," << r->pose[3] << "," << r->pose[4] << "," << r->pose[5] << "," << r->pose[6]
 						 << endl;
@@ -119,30 +119,35 @@ int main(int argc, const char **argv)
   previousTime = chrono::system_clock::now(); 
 
   // main loop
-  while(owl.isOpen() && owl.property<int>("initialized"))
-    {
-      const OWL::Event *event = owl.nextEvent(1000);
-      if(!event) continue;
+  while(owl.isOpen() && owl.property<int>("initialized")) {
+		const OWL::Event *event = owl.nextEvent(1000);
+		if(!event) continue;
 
-      if(event->type_id() == OWL::Type::ERROR)
-        {
-          cerr << event->name() << ": " << event->str() << endl;
-        }
-      else if(event->type_id() == OWL::Type::FRAME)
-        {
-          recordToLogfile(&rigids, event);
-          // Check if it's time to send a position update
-          currentTime = chrono::system_clock::now();
-          auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
-          if (elapsedMilliseconds.count() >= 1000) {
-            previousTime = currentTime;
-            event->find("rigids", rigids);
-            // TODO: Come up with a smarter way to deal with the markers
-            transmitPosition(&port, rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2]);
-          }
+		if(event->type_id() == OWL::Type::ERROR) {
+				cerr << event->name() << ": " << event->str() << endl;
+		}
 
-        }
-    } // while
+		else if(event->type_id() == OWL::Type::FRAME) {
+			int64_t	frameTime = event->time();
+
+			// Check if there is rigid body data
+			if (event->find("rigids", rigids) > 0 && rigids[0].cond > 0) {
+
+				recordToLogfile(&rigids, event); // TODO: Change this!
+				// Check if it's time to send a position update
+				currentTime = chrono::system_clock::now();
+				auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
+
+
+				if (elapsedMilliseconds.count() >= 1000) {
+					previousTime = currentTime;
+					transmitPosition(&port, rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2]);
+				}
+			}
+
+		}
+
+  } // while
 
   owl.done();
   owl.close();
