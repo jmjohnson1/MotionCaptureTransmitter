@@ -106,14 +106,14 @@ int main(int argc, const char **argv)
   owl.streaming(1);
 
   // Initialize serial
-  //Serial_Port port(uartName, baudrate);
-  //port.start();
-  //if (!port.is_running()) {
-  //  printf("\n");
-  //  printf("ERROR INITIALIZING SERIAL");
-  //  printf("\n");
-  //  return 1;
-  //}
+  Serial_Port port(uartName, baudrate);
+  port.start();
+  if (!port.is_running()) {
+    printf("\n");
+    printf("ERROR INITIALIZING SERIAL");
+    printf("\n");
+    return 1;
+  }
 
   ofstream logfile;
   logfile.open("output.csv");
