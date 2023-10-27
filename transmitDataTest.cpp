@@ -135,7 +135,7 @@ int main(int argc, const char **argv)
 
 			// Check if there is rigid body data
 			if (event->find("rigids", rigids) > 0 && rigids[0].cond > 0) {
-				logfile << "  " << rigids[0].id << ") " << rigids[0].pose[0] << "," << rigids[0].pose[1] << "," << rigids[0].pose[2]
+				logfile << frameTime << "," << rigids[0].pose[0] << "," << rigids[0].pose[1] << "," << rigids[0].pose[2]
 						 << "," << rigids[0].pose[3] << "," << rigids[0].pose[4] << "," << rigids[0].pose[5] << "," << rigids[0].pose[6]
 						 << endl;
 
@@ -146,7 +146,7 @@ int main(int argc, const char **argv)
 
 				if (elapsedMilliseconds.count() >= 1000) {
 					previousTime = currentTime;
-					//transmitPosition(&port, rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2]);
+					transmitPosition(&port, rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2]);
 				}
 			}
 
