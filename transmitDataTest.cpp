@@ -55,21 +55,21 @@ int transmitPosition(Serial_Port *port, float x, float y, float z) {
 //  }
 //}
 
-int recordToLogfile(const OWL::Rigids *rigids, const OWL::Event *event) {
-  ofstream logfile;
-  logfile.open("output.csv");
-  logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
-  if(event->find("rigids", *rigids) > 0) {
-    logfile << " rigids=" << rigids->size() << ":" << endl;
-    for(OWL::Rigids::iterator r = rigids->begin(); r != rigids->end(); r++) {
-      if(r->cond > 0) {
-				logfile << "  " << r->id << ") " << r->pose[0] << "," << r->pose[1] << "," << r->pose[2]
-						 << "," << r->pose[3] << "," << r->pose[4] << "," << r->pose[5] << "," << r->pose[6]
-						 << endl;
-      }
-    }
-  }
-}
+//int recordToLogfile(const OWL::Rigids *rigids, const OWL::Event *event) {
+//  ofstream logfile;
+//  logfile.open("output.csv");
+//  logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
+//  if(event->find("rigids", *rigids) > 0) {
+//    logfile << " rigids=" << rigids->size() << ":" << endl;
+//    for(OWL::Rigids::iterator r = rigids->begin(); r != rigids->end(); r++) {
+//      if(r->cond > 0) {
+//				logfile << "  " << r->id << ") " << r->pose[0] << "," << r->pose[1] << "," << r->pose[2]
+//						 << "," << r->pose[3] << "," << r->pose[4] << "," << r->pose[5] << "," << r->pose[6]
+//						 << endl;
+//      }
+//    }
+//  }
+//}
 
 int main(int argc, const char **argv)
 {
