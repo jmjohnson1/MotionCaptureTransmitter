@@ -73,7 +73,7 @@ int transmitPosition(Serial_Port *port, float x, float y, float z) {
 
 int main(int argc, const char **argv)
 {
-  string address = argc > 1 ? argv[1] : "localhost";
+  string address = argc > 1 ? argv[1] : "160.94.220.134";
   OWL::Context owl;
   OWL::Markers markers;
 	OWL::Rigids rigids;
@@ -86,21 +86,32 @@ int main(int argc, const char **argv)
   chrono::time_point<chrono::system_clock> previousTime, currentTime;
 
   if(owl.open(address) <= 0 || owl.initialize() <= 0) return 0;
+  owl.frequency(30.0);
 	
 
 	// Define a rigid body tracker
-	uint32_t trackerID = 1;
+	uint32_t trackerID = 0;
 	owl.createTracker(trackerID, "rigid", "quadcopter");
 
 	// Assign markers to rigid body (location in mm)
-	owl.assignMarker(trackerID, 0, "0", "pos = 0,0");
-	owl.assignMarker(trackerID, 1, "1", "pos = 0,0");
-	owl.assignMarker(trackerID, 2, "2", "pos = 0,0");
-	owl.assignMarker(trackerID, 3, "3", "pos = 0,0");
-	owl.assignMarker(trackerID, 4, "4", "pos = 0,0");
-	owl.assignMarker(trackerID, 5, "5", "pos = 0,0");
-	owl.assignMarker(trackerID, 6, "6", "pos = 0,0");
-	owl.assignMarker(trackerID, 7, "7", "pos = 0,0");
+	// front, starboard, down
+	//owl.assignMarker(trackerID, 5, "5", "pos=35,3,0");
+	//owl.assignMarker(trackerID, 7, "7", "pos=35,-3,0");
+	//owl.assignMarker(trackerID, 6, "6", "pos=-35,3,0");
+	//owl.assignMarker(trackerID, 4, "4", "pos=-35,-3,0");
+	//owl.assignMarker(trackerID, 3, "3", "pos=3,45,0");
+	//owl.assignMarker(trackerID, 1, "1", "pos=-3,45,0");
+	//owl.assignMarker(trackerID, 0, "0", "pos=3,-45,0");
+	//owl.assignMarker(trackerID, 2, "2", "pos=-3,-45,0");
+	
+	owl.assignMarker(trackerID, 5, "5", "pos=-64,61,0");
+	owl.assignMarker(trackerID, 7, "7", "pos=-64,66,0");
+	owl.assignMarker(trackerID, 6, "6", "pos=-64,-66,0");
+	owl.assignMarker(trackerID, 4, "4", "pos=-64,-61,0");
+	owl.assignMarker(trackerID, 3, "3", "pos=47,74,0");
+	owl.assignMarker(trackerID, 1, "1", "pos=53,74,0");
+	owl.assignMarker(trackerID, 0, "0", "pos=53,-74,0");
+	owl.assignMarker(trackerID, 2, "2", "pos=47,-74,0");
 
   // start streaming
   owl.streaming(1);
@@ -122,6 +133,7 @@ int main(int argc, const char **argv)
   previousTime = chrono::system_clock::now(); 
 
   // main loop
+  cout << "Main loop starting" << endl;
   while(owl.isOpen() && owl.property<int>("initialized")) {
 		const OWL::Event *event = owl.nextEvent(1000);
 		if(!event) continue;
@@ -132,9 +144,10 @@ int main(int argc, const char **argv)
 
 		else if(event->type_id() == OWL::Type::FRAME) {
 			int64_t	frameTime = event->time();
+			
 
 			// Check if there is rigid body data
-			if (event->find("rigids", rigids) > 0 && rigids[0].cond > 0) {
+			if (event->find("rigids", rigids) > 0) {
 				logfile << frameTime << "," << rigids[0].pose[0] << "," << rigids[0].pose[1] << "," << rigids[0].pose[2]
 						 << "," << rigids[0].pose[3] << "," << rigids[0].pose[4] << "," << rigids[0].pose[5] << "," << rigids[0].pose[6]
 						 << endl;
