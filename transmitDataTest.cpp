@@ -6,8 +6,6 @@
 */
 
 // TODO: add quit handler
-// TODO: Change output to csv
-// TODO: Define a rigid body
 
 #include <iostream>
 #include <stdio.h>
@@ -37,39 +35,9 @@ int transmitPosition(Serial_Port *port, float x, float y, float z) {
 	uint8_t sysID = 50;
 	uint8_t compID = 0;
 	mavlink_msg_local_position_ned_pack(sysID, compID, &msg, 0, x, y, z, 0, 0, 0);
-  port->write_message(msg);
+  	port->write_message(msg);
 	return 0;
 }
-
-//int recordToLogfile(OWL::Markers *markers, const OWL::Event *event) {
-//  ofstream logfile;
-//  logfile.open("output.csv");
-//  logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
-//  if(event->find("markers", *markers) > 0) {
-//    logfile << " markers=" << markers->size() << ":" << endl;
-//    for(OWL::Markers::iterator m = markers->begin(); m != markers->end(); m++) {
-//      if(m->cond > 0) {
-//        logfile << "  " << m->id << ") " << m->x << "," << m->y << "," << m->z << endl;
-//      }
-//    }
-//  }
-//}
-
-//int recordToLogfile(const OWL::Rigids *rigids, const OWL::Event *event) {
-//  ofstream logfile;
-//  logfile.open("output.csv");
-//  logfile << "time=" << event->time() << " " << event->type_name() << " " << event->name() << "=" << event->size<OWL::Event>() << ":" << endl;
-//  if(event->find("rigids", *rigids) > 0) {
-//    logfile << " rigids=" << rigids->size() << ":" << endl;
-//    for(OWL::Rigids::iterator r = rigids->begin(); r != rigids->end(); r++) {
-//      if(r->cond > 0) {
-//				logfile << "  " << r->id << ") " << r->pose[0] << "," << r->pose[1] << "," << r->pose[2]
-//						 << "," << r->pose[3] << "," << r->pose[4] << "," << r->pose[5] << "," << r->pose[6]
-//						 << endl;
-//      }
-//    }
-//  }
-//}
 
 int main(int argc, const char **argv)
 {
@@ -167,7 +135,7 @@ int main(int argc, const char **argv)
 
   } // while
 
-	logfile.close();
+  logfile.close();
   owl.done();
   owl.close();
 
