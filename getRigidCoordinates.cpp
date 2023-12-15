@@ -1,7 +1,9 @@
 #include <iostream>
 #include <cstring>
+#include <cmath>
 
 #include "owl.hpp"
+using namespace std;
 
 int main(int argc, const char **argv) {
     std::string address = argc > 1 ? argv[1] : "160.94.220.134";
@@ -14,10 +16,10 @@ int main(int argc, const char **argv) {
 
     owl.streaming(1);
 
-    int bodyOriginMarkerID = 0;
+    int bodyOriginMarkerID = 4;
     int axisMarkerID = 1;
 
-    int numberSamples = 30;
+    int numberSamples = 10000;
     int numberMarkers = 8;
     float markerPositions[numberMarkers][numberSamples][3];
     // Initalize all positions to NAN
