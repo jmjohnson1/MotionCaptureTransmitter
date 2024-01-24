@@ -16,8 +16,8 @@ int main(int argc, const char **argv) {
 
     owl.streaming(1);
 
-    int bodyOriginMarkerID = 4;
-    int axisMarkerID = 1;
+    int bodyOriginMarkerID = 1;
+    int axisMarkerID = 0;
 
     int numberSamples = 10000;
     int numberMarkers = 8;

@@ -84,12 +84,14 @@ int main(int argc, const char **argv)
 	//owl.assignMarker(trackerID, 0, "0", "pos=3,-45,0");
 	//owl.assignMarker(trackerID, 2, "2", "pos=-3,-45,0");
 	
-	owl.assignMarker(trackerID, 0, "0", "pos=84,6.9,29");
-	owl.assignMarker(trackerID, 1, "1", "pos=53,0,-1.9");
-	owl.assignMarker(trackerID, 2, "2", "pos=-60,89,28");
-	owl.assignMarker(trackerID, 4, "4", "pos=0,0,0");
-	owl.assignMarker(trackerID, 5, "5", "pos=-60,-56,31");
-	owl.assignMarker(trackerID, 7, "7", "pos=45,-85,27");
+	owl.assignMarker(trackerID, 0, "0", "pos=52.5,0,0.48");
+	owl.assignMarker(trackerID, 1, "1", "pos=0,0,0");
+	owl.assignMarker(trackerID, 2, "2", "pos=-80.4,-22.2,11.3");
+	owl.assignMarker(trackerID, 3, "3", "pos=-77.3,-85.8,33.9");
+	owl.assignMarker(trackerID, 4, "4", "pos=-45.97,-4.9,-25.1");
+	owl.assignMarker(trackerID, 4, "5", "pos=-59.3,59.05,32.3");
+	owl.assignMarker(trackerID, 6, "6", "pos=48.9,67.1,32.7");
+	owl.assignMarker(trackerID, 7, "7", "pos=59.9,-84.95,31.98");
 
   // start streaming
   owl.streaming(1);
@@ -129,7 +131,7 @@ int main(int argc, const char **argv)
 					position << rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2];
 					position = dcm_cam2ned*position;
 					position = position/1000.0f;
-					attitude = Eigen::Quaternionf(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6])*dq_cam2ned;
+					attitude = (Eigen::Quaternionf(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6])*dq_cam2ned).normalized();
 					logfile << (chrono::duration_cast<chrono::milliseconds>(currentTime - startTime)).count() << "," 
 									<< position[0] << "," << position[1] << "," << position[2] << "," 
 									<< attitude.w() << "," << attitude.x() << "," << attitude.y() << "," << attitude.z()
