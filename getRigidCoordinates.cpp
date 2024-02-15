@@ -16,8 +16,8 @@ int main(int argc, const char **argv) {
 
     owl.streaming(1);
 
-    int bodyOriginMarkerID = 1;
-    int axisMarkerID = 0;
+    int bodyOriginMarkerID = 2;
+    int axisMarkerID = 3;
 
     int numberSamples = 10000;
     int numberMarkers = 8;
@@ -119,7 +119,7 @@ int main(int argc, const char **argv) {
     // Output the body frame coordinates
     std::cout << "Body frame marker coordinates: " << std::endl;
     for (int i = 0; i < numberMarkers; i++) {
-        std::cout << "ID: " << i << " x=" << markerPositionsAvg[i][0] << ",y=" << markerPositionsAvg[i][1] << ",z=" << markerPositionsAvg[i][2] << std::endl;
+        std::cout << "owl.assignMarker(trackerID, " << i << ", \"" << i << "\", \"pos=" << markerPositionsAvg[i][0] << "," << markerPositionsAvg[i][1] << "," << markerPositionsAvg[i][2] << "\");" << std::endl;
     }
 
     owl.done();
