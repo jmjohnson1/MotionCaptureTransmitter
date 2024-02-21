@@ -125,10 +125,10 @@ private:
 	const static int BUFF_LEN=2041;
 	char buff[BUFF_LEN];
 	int buff_ptr;
-	int buff_len;
+	int buff_len = BUFF_LEN;
 	bool debug;
 	const char *target_ip;
-	int rx_port;
+	int rx_port = 1;
 	int tx_port;
 	int sock;
 	bool is_open;

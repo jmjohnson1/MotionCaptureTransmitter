@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include <mavlink/common/mavlink.h>
+#include "mavlink/common/mavlink_msg_vicon_position_estimate.h"
 #include "owl.hpp"
 #include "serial_port.h"
 #include "udp_port.h"
@@ -31,13 +32,13 @@
 using std::string;
 using namespace std;
 
-int transmitPosition(Generic_Port *port, Eigen::Vector3f pos) {
+int transmitPosition(Generic_Port *port, Eigen::Vector3f pos, uint64_t timestamp) {
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint8_t sysID = 50;
 	uint8_t compID = 0;
-	mavlink_msg_local_position_ned_pack(sysID, compID, &msg, 0, pos[0], pos[1], pos[2], 0, 0, 0);
-  	port->write_message(msg);
+	mavlink_msg_vicon_position_estimate_pack(sysID, compID, &msg, timestamp, pos[0], pos[1], pos[2], 0, 0, 0, 0);
+  port->write_message(msg);
 	return 0;
 }
 
@@ -93,16 +94,13 @@ int main(int argc, const char **argv)
 
 	// Assign markers to rigid body (location in mm)
 	// front, starboard, down
-	owl.assignMarker(trackerID, 0, "0", "pos=62.153,91.4967,30.6584");
-	owl.assignMarker(trackerID, 1, "1", "pos=-53.0272,67.381,31.1213");
+	owl.assignMarker(trackerID, 0, "0", "pos=48.5438,98.3303,33.2116");
 	owl.assignMarker(trackerID, 2, "2", "pos=0,0,-0");
-	owl.assignMarker(trackerID, 3, "3", "pos=48.3493,0,-0.373772");
-	owl.assignMarker(trackerID, 4, "4", "pos=64.9287,-17.1258,2.61572");
-	owl.assignMarker(trackerID, 5, "5", "pos=67.1021,13.6921,2.01035");
-	owl.assignMarker(trackerID, 6, "6", "pos=51.6138,-79.0542,32.5017");
-	owl.assignMarker(trackerID, 7, "7", "pos=-85.1334,-86.7128,33.5801");
-
-
+	owl.assignMarker(trackerID, 3, "3", "pos=50.0671,4.76837e-07,0.0730972");
+	owl.assignMarker(trackerID, 4, "4", "pos=69.0167,-7.36591,3.25385");
+	owl.assignMarker(trackerID, 5, "5", "pos=67.336,22.7949,2.81343");
+	owl.assignMarker(trackerID, 6, "6", "pos=65.0018,-82.2399,39.0174");
+	owl.assignMarker(trackerID, 7, "7", "pos=-69.5877,-96.1139,35.4213");
 
   // start streaming
   owl.streaming(1);
@@ -114,6 +112,9 @@ int main(int argc, const char **argv)
 	} else {
 		port = new Serial_Port(uartName, baudrate);
 	}
+
+	mavlink_message_t dummy;
+
   port->start();
   if (!port->is_running()) {
     printf("\n");
@@ -122,12 +123,16 @@ int main(int argc, const char **argv)
     return 1;
   }
 
-	// Gets UDP to move on
-	mavlink_message_t dummy;
+	cout << "Port running" << endl;
+	
+	//Gets UDP to move on
 	port->read_message(dummy);
+
+	cout << "dummy done";
 
   ofstream logfile;
   logfile.open("output.csv");
+	logfile << "time,x,y,z,qw,qx,qy,qz" << endl;
 
   // Start recording time for message streaming rate
   previousTime = chrono::system_clock::now(); 
@@ -154,8 +159,8 @@ int main(int argc, const char **argv)
 					attitude = Eigen::Quaternionf(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6]);
 					attitude = attitude.conjugate()*dq_cam2ned;
 
-					eulUnchanged = quat2eul(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6]);
-					eulRotated = quat2eul(attitude.w(), attitude.x(), attitude.y(), attitude.z());
+					//eulUnchanged = quat2eul(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6]);
+					//eulRotated = quat2eul(attitude.w(), attitude.x(), attitude.y(), attitude.z());
 
 					//cout << "original: " <<eulUnchanged << std::endl;
 					//cout << "rotated: " << eulRotated << endl;
@@ -169,7 +174,7 @@ int main(int argc, const char **argv)
 					auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
 					if (elapsedMilliseconds.count() >= 100) {
 						previousTime = currentTime;
-						transmitPosition(port, position);
+						transmitPosition(port, position, (chrono::duration_cast<chrono::microseconds>(currentTime - startTime)).count());
 					}
 				}
 			}
