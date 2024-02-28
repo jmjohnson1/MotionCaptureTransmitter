@@ -94,13 +94,14 @@ int main(int argc, const char **argv)
 
 	// Assign markers to rigid body (location in mm)
 	// front, starboard, down
-	owl.assignMarker(trackerID, 0, "0", "pos=48.5438,98.3303,33.2116");
+	owl.assignMarker(trackerID, 0, "0", "pos=49.7728,91.5584,33.6128");
 	owl.assignMarker(trackerID, 2, "2", "pos=0,0,-0");
-	owl.assignMarker(trackerID, 3, "3", "pos=50.0671,4.76837e-07,0.0730972");
-	owl.assignMarker(trackerID, 4, "4", "pos=69.0167,-7.36591,3.25385");
-	owl.assignMarker(trackerID, 5, "5", "pos=67.336,22.7949,2.81343");
-	owl.assignMarker(trackerID, 6, "6", "pos=65.0018,-82.2399,39.0174");
-	owl.assignMarker(trackerID, 7, "7", "pos=-69.5877,-96.1139,35.4213");
+	owl.assignMarker(trackerID, 3, "3", "pos=48.5332,0,3.24794");
+	owl.assignMarker(trackerID, 4, "4", "pos=66.694,-10.9626,4.64607");
+	owl.assignMarker(trackerID, 5, "5", "pos=65.6165,18.3679,2.10233");
+	owl.assignMarker(trackerID, 6, "6", "pos=56.4292,-80.1433,33.7672");
+	owl.assignMarker(trackerID, 7, "7", "pos=-71.8717,-89.6447,33.0399");
+
 
   // start streaming
   owl.streaming(1);
@@ -132,7 +133,7 @@ int main(int argc, const char **argv)
 
   ofstream logfile;
   logfile.open("output.csv");
-	logfile << "time,x,y,z,qw,qx,qy,qz" << endl;
+	logfile << "time,x,y,z,qw,qx,qy,qz,msgTransmitted" << endl;
 
   // Start recording time for message streaming rate
   previousTime = chrono::system_clock::now(); 
@@ -165,17 +166,20 @@ int main(int argc, const char **argv)
 					//cout << "original: " <<eulUnchanged << std::endl;
 					//cout << "rotated: " << eulRotated << endl;
 
+
 					logfile << (chrono::duration_cast<chrono::milliseconds>(currentTime - startTime)).count() << "," 
 									<< position[0] << "," << position[1] << "," << position[2] << "," 
-									<< attitude.w() << "," << attitude.x() << "," << attitude.y() << "," << attitude.z()
-									<< endl;
+									<< attitude.w() << "," << attitude.x() << "," << attitude.y() << "," << attitude.z();
 
 					// Check if it's time to send a position update
 					auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
 					if (elapsedMilliseconds.count() >= 100) {
 						previousTime = currentTime;
 						transmitPosition(port, position, (chrono::duration_cast<chrono::microseconds>(currentTime - startTime)).count());
+						logfile << 1 << endl;
+						continue;
 					}
+					logfile << 0 << endl;
 				}
 			}
 
