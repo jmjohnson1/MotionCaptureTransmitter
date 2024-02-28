@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <fstream>
 
 #include "owl.hpp"
 using namespace std;
@@ -54,6 +55,19 @@ int main(int argc, const char **argv) {
             } 
         }
     }
+
+    ofstream log;
+    log.open("markerPositions.csv");
+    log << "m_id, x, y, z" << endl;
+    for (int i = 0; i < numberMarkers; i++) {
+        for (int j = 0; j < numberSamples; j++) {
+            log << i << "," 
+                << markerPositions[i][j][0] << ","
+                << markerPositions[i][j][1] << ","
+                << markerPositions[i][j][2] << endl;
+        }
+    }
+    log.close();
 
     // Take the average position of available markers
     float markerPositionsAvg[numberMarkers][3];

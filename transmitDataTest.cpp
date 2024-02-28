@@ -23,7 +23,6 @@
 #include <chrono>
 
 #include <mavlink/common/mavlink.h>
-#include "mavlink/common/mavlink_msg_vicon_position_estimate.h"
 #include "owl.hpp"
 #include "serial_port.h"
 #include "udp_port.h"
@@ -34,7 +33,6 @@ using namespace std;
 
 int transmitPosition(Generic_Port *port, Eigen::Vector3f pos, uint64_t timestamp) {
 	mavlink_message_t msg;
-	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 	uint8_t sysID = 50;
 	uint8_t compID = 0;
 	mavlink_msg_vicon_position_estimate_pack(sysID, compID, &msg, timestamp, pos[0], pos[1], pos[2], 0, 0, 0, 0);
@@ -42,13 +40,6 @@ int transmitPosition(Generic_Port *port, Eigen::Vector3f pos, uint64_t timestamp
 	return 0;
 }
 
-Eigen::Vector3f quat2eul(float qw, float qx, float qy, float qz) {
-	Eigen::Vector3f eul;
-	eul[0] = atan2(2.0f*(qw*qx + qy*qz), 1.0f - 2.0f*(qx*qx + qy*qy));
-	eul[1] = -M_PI/2.0f + 2.0f*atan2(sqrt(1.0f + 2.0f*(qw*qy - qx*qz)), sqrt(1.0f - 2.0f*(qw*qy - qx*qz)));
-	eul[2] = atan2(2.0f*(qw*qz + qx*qy), 1.0f - 2.0f*(qy*qy + qz*qz));
-	return eul*180.0f/M_PI;
-	}
 
 int main(int argc, const char **argv)
 {
@@ -65,8 +56,8 @@ int main(int argc, const char **argv)
 	bool use_udp = true;
 	const char *udp_ip = (char*)"127.0.0.1";
 	const int udp_port = 14540;
-	
 
+	int64_t timeOffset = 0; // Time offset relative to quad in us
   // Timer for metering data transmission
   chrono::time_point<chrono::system_clock> previousTime, currentTime;
 	// Time for logging
@@ -102,19 +93,17 @@ int main(int argc, const char **argv)
 	owl.assignMarker(trackerID, 6, "6", "pos=56.4292,-80.1433,33.7672");
 	owl.assignMarker(trackerID, 7, "7", "pos=-71.8717,-89.6447,33.0399");
 
-
   // start streaming
   owl.streaming(1);
 
+	// Setup port for MAVLink messages
 	Generic_Port *port;
-  // Initialize serial
+  // Initialize serial or udp
 	if (use_udp) {
 		port = new UDP_Port(udp_ip, udp_port);
 	} else {
 		port = new Serial_Port(uartName, baudrate);
 	}
-
-	mavlink_message_t dummy;
 
   port->start();
   if (!port->is_running()) {
@@ -124,20 +113,50 @@ int main(int argc, const char **argv)
     return 1;
   }
 
-	cout << "Port running" << endl;
-	
 	//Gets UDP to move on
+	mavlink_message_t dummy;
 	port->read_message(dummy);
 
-	cout << "dummy done";
-
+	// Logging setup
   ofstream logfile;
-  logfile.open("output.csv");
-	logfile << "time,x,y,z,qw,qx,qy,qz,msgTransmitted" << endl;
+  logfile.open("mocap_.csv");
+	logfile << "time_us,x,y,z,qw,qx,qy,qz,msgTransmitted" << endl;
+
+
+	// Record server properties
+	ofstream properties;
+	properties.open("currentProperties");
+	// int
+	properties << "Opened: " << owl.property<int>("opened") << endl;
+  properties << "Initialized: " << owl.property<int>("initialized") << endl;
+	properties << "Streaming: " << owl.property<int>("streaming") << endl;
+	properties << "SystemTimebase: " << owl.property<int>("systemtimebase") << endl;
+	properties << "Timebase: " << owl.property<int>("timebase") << endl;
+	// float
+	properties << "Frequency: " << owl.property<float>("frequency") << endl;
+	properties << "Scale: " << owl.property<float>("scale") << endl;
+	// string
+	properties << "Profile: " << owl.property<string>("profile") << endl;
+	properties << "filters: " << owl.property<string>("filters") << endl;
+	properties.close();
 
   // Start recording time for message streaming rate
   previousTime = chrono::system_clock::now(); 
 	startTime = chrono::system_clock::now();
+
+
+	// Let's figure out the difference between our clock and the quad's. We're
+	// assuming the offset is constant and so is the transmission time. Bad
+	// assumptions!
+	//chrono::time_point<chrono::system_clock> timeout;
+	//while (timeOffset==0) {
+		
+		//mavlink_message_t incommingMsg;
+		//port->read_message(incommingMsg);
+
+
+	//}
+
 
   // main loop
   cout << "Main loop starting" << endl;
@@ -155,31 +174,27 @@ int main(int argc, const char **argv)
 			if (event->find("rigids", rigids) > 0) {
 				if (rigids[0].cond > 0) {
 					position << rigids[0].pose[0], rigids[0].pose[1], rigids[0].pose[2];
-					position = dcm_cam2ned*position;
-					position = position/1000.0f;
+					position = dcm_cam2ned*position; // Change to a local NED frame
+					position = position/1000.0f;  // Change units from mm to m
 					attitude = Eigen::Quaternionf(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6]);
-					attitude = attitude.conjugate()*dq_cam2ned;
-
-					//eulUnchanged = quat2eul(rigids[0].pose[3], rigids[0].pose[4], rigids[0].pose[5], rigids[0].pose[6]);
-					//eulRotated = quat2eul(attitude.w(), attitude.x(), attitude.y(), attitude.z());
-
-					//cout << "original: " <<eulUnchanged << std::endl;
-					//cout << "rotated: " << eulRotated << endl;
-
-
-					logfile << (chrono::duration_cast<chrono::milliseconds>(currentTime - startTime)).count() << "," 
-									<< position[0] << "," << position[1] << "," << position[2] << "," 
-									<< attitude.w() << "," << attitude.x() << "," << attitude.y() << "," << attitude.z();
+					attitude = (attitude.conjugate()*dq_cam2ned).normalized();
 
 					// Check if it's time to send a position update
+					bool transmission = false;  // Records if a transmission is sent
 					auto elapsedMilliseconds = chrono::duration_cast<chrono::milliseconds>(currentTime - previousTime);
 					if (elapsedMilliseconds.count() >= 100) {
 						previousTime = currentTime;
 						transmitPosition(port, position, (chrono::duration_cast<chrono::microseconds>(currentTime - startTime)).count());
-						logfile << 1 << endl;
-						continue;
+						transmission = true;
+						cout << "Position transmitted" << endl;
 					}
-					logfile << 0 << endl;
+
+					// Record to logfile
+					logfile << (chrono::duration_cast<chrono::microseconds>(currentTime - startTime)).count() << ","; 
+					logfile << position[0] << "," << position[1] << "," << position[2] << ",";
+					logfile << attitude.w() << "," << attitude.x() << "," << attitude.y() << "," << attitude.z();
+					logfile << transmission;
+					logfile << endl;
 				}
 			}
 
